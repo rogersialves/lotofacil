@@ -4,7 +4,7 @@ Jogando na Lotofácil utilizando rede neural.
 
 ## INFORMAÇÕES  
 
-**Linguagem utilizada: Python 3 (v3.8.2)**  
+**Linguagem utilizada: Python 3 (v3.11.9)**  
 
 ### PRINCIPAIS PACOTES UTILIZADOS  
 
@@ -31,19 +31,19 @@ A Lotofácil é, como o próprio nome diz, fácil de apostar e principalmente de
 
 ### Apostas  
 
-A aposta mínima, de 15 números, custa R$ 2,50.
+A aposta mínima, de 15 números, custa R$ 3,00.
 
 ### Sorteios  
 
-Os sorteios são realizados às segundas, quartas e sextas-feiras, sempre às 20h.
+Os sorteios são realizados de segunda a sábado, sempre às 20h.
 
 ### Premiação  
 
 O prêmio bruto corresponde a 43,35% da arrecadação. Dessa porcentagem, será deduzido o pagamento dos prêmios com valores fixos:
 
-- R$ 5,00 para as apostas com 11 prognósticos certos entre os 15 sorteados;
-- R$ 10,00 para as apostas com 12 prognósticos certos entre os 15 sorteados;
-- R$ 25,00 para as apostas com 13 prognósticos certos entre os 15 sorteados.
+- R$ 6,00 para as apostas com 11 prognósticos certos entre os 15 sorteados;
+- R$ 12,00 para as apostas com 12 prognósticos certos entre os 15 sorteados;
+- R$ 30,00 para as apostas com 13 prognósticos certos entre os 15 sorteados.
 
 Após a apuração dos ganhadores dos prêmios com valores fixos, o valor restante do total destinado à premiação será distribuído para as demais faixas de prêmios nos seguintes percentuais:
 
@@ -55,7 +55,7 @@ Os prêmios prescrevem 90 dias após a data do sorteio. Após esse prazo, os val
 
 ### Recebimento de prêmios  
 
-Você pode receber seu prêmio em qualquer casa lotérica credenciada ou nas agências da Caixa. Caso o prêmio líquido seja superior a R$ 1.332,78 (bruto de R$ 1.903,98) o pagamento pode ser realizado somente nas agências da Caixa. Valores iguais ou acima de R$ 10.000,00 são pagos após 2 dias de sua apresentação na agência da Caixa.
+Você pode receber seu prêmio em qualquer casa lotérica credenciada ou nas agências da Caixa.
 
 ### Acumulação  
 
@@ -65,10 +65,12 @@ Não havendo ganhador em qualquer faixa de premiação, o valor acumula para o c
 
 |     Quantidade de números   |    Valor em R$    |
 | :-------------------------: |:-----------------:|
-| 15 números                  |       2,50        |
-| 16 números                  |       40,00       |
-| 17 números                  |       340,00      |
-| 18 números                  |       2.040,00    |  
+| 15 números                  |    3,00           |
+| 16 números                  |    48,00          |
+| 17 números                  |    408,00         |
+| 18 números                  |    2.448,00       |  
+| 19 números                  |    11.628,00      |  
+| 20 números                  |    46.512,00      |  
 
 # COMO UTILIZAR
 
@@ -88,9 +90,9 @@ Não havendo ganhador em qualquer faixa de premiação, o valor acumula para o c
 
 ## Instalação do interpretador Python  
 
-O projeto utiliza o Python 3 na versão v3.8.2, e para melhor compatibilidade é recomendado que a versão seja mantida.
+O projeto utiliza o Python 3 na versão v3.11.9, e para melhor compatibilidade é recomendado que a versão seja mantida.
 
-[Download - Python 3 v3.8.2](https://www.python.org/downloads/release/python-382/)  
+[Download - Python 3 v3.8.2](https://www.python.org/downloads/release/)  
 
 ## Criação do ambiente virtual  
 
@@ -208,6 +210,46 @@ python .\jogar.py
 ### Dúvidas, bugs e sugestões
 
 Em casos de dúvida, bugs ou queria propror uma melhoria abra uma Issue. Vamos aprender juntos e desenvolver novas soluções.
+
+## O MODELO DE REDE NEURAL
+
+### Estrutura do Modelo
+
+O projeto utiliza uma rede neural sequencial com quatro camadas para prever a probabilidade de uma combinação de números ser sorteada:
+
+- 3 camadas ocultas com função de ativação ReLU
+- 1 camada de saída com função de ativação sigmoid
+
+### Parâmetros do Modelo
+
+O modelo é configurado com os seguintes parâmetros:
+
+| Camada           | Neurônios | Função de Ativação | Propósito                                        |
+|------------------|-----------|--------------------|-------------------------------------------------|
+| Primeira camada  | 30        | ReLU               | Identifica padrões básicos nos dados históricos |
+| Segunda camada   | 15        | ReLU               | Processa relações mais complexas entre padrões  |
+| Terceira camada  | 15        | ReLU               | Refina os padrões identificados                 |
+| Camada de saída  | 1         | Sigmoid            | Gera probabilidade entre 0 e 1                  |
+
+### Hiperparâmetros de Treinamento
+
+- **Épocas (periodo)**: 50 - Número máximo de ciclos completos de treinamento
+- **Batch Size (lote)**: 15 - Número de amostras processadas antes de atualizar os pesos
+- **Otimizador**: Adam - Algoritmo de otimização estocástica para ajuste de pesos
+- **Loss Function**: Binary Crossentropy - Adequada para problemas de classificação binária
+- **Early Stopping**: Interrompe o treinamento quando não há melhoria na validação
+
+### Aplicação na Lotofácil
+
+O modelo analisa os resultados históricos da Lotofácil para:
+
+1. Aprender padrões estatísticos nos sorteios anteriores
+2. Avaliar a probabilidade de novas combinações serem sorteadas
+3. Classificar jogos como tendo alta ou baixa chance de prêmio
+
+A saída do modelo é um valor entre 0 e 1, onde valores mais próximos de 1 indicam maior probabilidade estimada da combinação ser sorteada.
+
+Este sistema não garante vitórias, mas fornece uma abordagem baseada em dados históricos para gerar jogos com características estatisticamente semelhantes aos sorteios anteriores.
 
 ## Contribuição
 

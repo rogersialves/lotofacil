@@ -1,7 +1,10 @@
-from dados.dados import dividir_dados
+from typing import Any
 
-from keras.layers import Dense
-from keras.models import Sequential
+from dados.dados import dividir_dados
+import keras
+from keras import layers, models, callbacks
+
+SILENT: Any = 0
 
 
 def criar_modelo(
@@ -29,13 +32,13 @@ def criar_modelo(
     x_treino, x_teste, y_treino, y_teste, atributos = dividir_dados(base_dados)
 
     # Criando o modelo
-    modelo = Sequential()
+    modelo = models.Sequential()
 
     # Criando as camadas do modelo
-    modelo.add(Dense(primeira_camada, input_dim=atributos, activation='relu'))
-    modelo.add(Dense(segunda_camada, activation='relu'))
-    modelo.add(Dense(terceira_camada, activation='relu'))
-    modelo.add(Dense(saida, activation='sigmoid'))
+    modelo.add(layers.Dense(primeira_camada, input_dim=atributos, activation='relu'))
+    modelo.add(layers.Dense(segunda_camada, activation='relu'))
+    modelo.add(layers.Dense(terceira_camada, activation='relu'))
+    modelo.add(layers.Dense(saida, activation='sigmoid'))
 
     # Compilando o modelo
     modelo.compile(
@@ -43,11 +46,24 @@ def criar_modelo(
                     optimizer='adam',
                     metrics=['accuracy'])
 
-    # Treinando o modelo
-    modelo.fit(x_treino, y_treino, epochs=periodo, batch_size=lote)
+    # Configurando EarlyStopping
+    early_stopping = callbacks.EarlyStopping(monitor='val_loss', patience=10, restore_best_weights=True)
+
+    # Treinando o modelo (com verbose=0 para suprimir saídas)
+    modelo.fit(
+                x_treino,
+                y_treino,
+                epochs=periodo,
+                batch_size=lote,
+                verbose=SILENT,
+                validation_split=0.2,
+                callbacks=[early_stopping]
+              )
 
     # Avaliação do modelo
-    pontuacao = modelo.evaluate(x_teste, y_teste)
+    pontuacao = modelo.evaluate(x_teste, y_teste, verbose=SILENT)
+
+    print(f"Dimensão da entrada do modelo: {atributos}")
 
     return modelo, pontuacao[1]
 

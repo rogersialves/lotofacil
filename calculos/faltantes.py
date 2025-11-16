@@ -1,10 +1,21 @@
+from dataclasses import dataclass
+from typing import List
+
 from calculos.frequencia import gerar_frequencia
 from random import choice, choices
 
 
+@dataclass
+class AjusteDezenas:
+    faltantes: List[int]
+    ajuste_faltantes: int
+    restantes: List[int]
+    ajuste_restantes: int
+
+
 def ultimo_jogos(base_dados):
     """
-    Encontra a quantidade de jogos realizados posteriormente ao último ciclo fechado.
+    Encontra a quantidade de jogos realizados posteriormente ao ltimo ciclo fechado.
 
     :param base_dados: DataFrame da base de dados.
 
@@ -17,10 +28,10 @@ def ultimo_jogos(base_dados):
     # O maior ciclo fechado
     maior = max(dados['Ciclo'])
 
-    # Índice do último ciclo fechado
+    # 4ndice do ltimo ciclo fechado
     ciclo = int(dados.query(f'Ciclo == {maior}')['Concurso'].index[0])
 
-    # Quantidade de jogos realizados após o último ciclo fechado
+    # Quantidade de jogos realizados ap3s o ltimo ciclo fechado
     jogos = len(dados.iloc[ciclo + 1:])
 
     return jogos
@@ -28,164 +39,70 @@ def ultimo_jogos(base_dados):
 
 def numeros_faltantes_ciclo(base_dados):
     """
-    Obtem o(s) número(s) faltante(s) para fechar o ciclo das dezenas.
+    Obtem o(s) n9mero(s) faltante(s) para fechar o ciclo das dezenas.
 
     :param base_dados: DataFrame da base de dados.
 
-    :return: o(s) número(s) faltante(s) sorteado(s) e o percentual de reajuste de peso.
+    :return: o(s) n9mero(s) faltante(s) sorteado(s) e o percentual de reajuste de peso.
     """
 
     dados = base_dados.copy()
     jogos = ultimo_jogos(dados)
     frequencia = gerar_frequencia(dados)
 
-    maior_peso = 0
+    maior_peso = next(iter(frequencia[0].values()), 0)
 
-    # Obtém o maior peso (maior frequência na relação de dezenas)
-    for chave, valor in frequencia[0].items():
-        maior_peso = valor
-        break
-
-    # Obtém as dezenas faltantes
     relacao_numeros = list(dados.iloc[-1, 22:32].values)
     num_faltantes = [numero for numero in relacao_numeros if numero > 0]
-    numeros = num_faltantes[:]
+    qtde_faltantes = len(num_faltantes)
 
-    # Quantidade de dezenas ainda não sorteadas. Utilizado a partir de jogo >= 2
-    qtde_faltantes = len(numeros)
+    ajuste_padrao = AjusteDezenas(num_faltantes, maior_peso, [], 0)
 
-    pesos = list()
-    peso = dict()
-    jogo = list()
-
-    faltantes = list()
+    if not qtde_faltantes:
+        return ajuste_padrao
 
     if jogos == 1:
-        # Existem 10 dezenas que ainda não foram sorteadas para completar o ciclo
-
-        for i in range(1, 8):
-            jogo.append(i)
-            peso[i] = len(dados.query(f'Jogo == 2 & Falta == {i}'))
-
-        for k, v in peso.items():
-            pesos.append(v)
-
-        # Define o número de dezenas das que não foram sorteadas para terem seus pesos reajustados
+        jogo = list(range(1, 8))
+        pesos = [len(dados.query(f'Jogo == 2 & Falta == {i}')) for i in jogo]
         n_dz = choices(jogo, weights=pesos, k=1)
 
-        for j in range(n_dz[0]):
+        numeros = num_faltantes[:]
+        faltantes = list()
 
-            # Sorteia um número aleatoriamente
+        for _ in range(n_dz[0]):
+            if not numeros:
+                break
             numero_sorteado = choice(numeros)
-
-            # Remove da relação de sorteio o número já sorteado
             numeros.remove(numero_sorteado)
-
-            # Atribui o número sorteado ao vetor
             faltantes.append(numero_sorteado)
 
-        # Demais números faltantes que não foram sorteados
         restantes = [numero for numero in num_faltantes if numero not in faltantes]
 
-        return faltantes, maior_peso, restantes, maior_peso // 2
+        return AjusteDezenas(faltantes, maior_peso, restantes, maior_peso // 2)
 
-    elif jogos == 2:
-
-        for i in range(0, qtde_faltantes + 1):
-            jogo.append(i)
-            peso[i] = len(dados.query(f'Jogo == 3 & Falta == {i}'))
-
-        for k, v in peso.items():
-            pesos.append(v)
-
+    if jogos in (2, 3, 4):
+        referencia = jogos + 1
+        jogo = list(range(0, qtde_faltantes + 1))
+        pesos = [len(dados.query(f'Jogo == {referencia} & Falta == {i}')) for i in jogo]
         n_dz = choices(jogo, weights=pesos, k=1)
 
-        for j in range(n_dz[0]):
+        numeros = num_faltantes[:]
+        faltantes = list()
 
-            # Sorteia um número aleatoriamente
+        for _ in range(n_dz[0]):
+            if not numeros:
+                break
             numero_sorteado = choice(numeros)
-
-            # Remove da relação de sorteio o número já sorteado
             numeros.remove(numero_sorteado)
-
-            # Atribui o número sorteado ao vetor
             faltantes.append(numero_sorteado)
 
         if qtde_faltantes == n_dz[0] or n_dz[0] == 0:
-            # Considera que todos os números faltantes serão sorteados no próximo sorteio
-            return num_faltantes, maior_peso
+            return ajuste_padrao
 
-        elif 1 < qtde_faltantes != n_dz[0] and n_dz[0] > 0:
-            # Demais números faltantes que não foram sorteados
+        if 1 < qtde_faltantes != n_dz[0] and n_dz[0] > 0:
             restantes = [numero for numero in num_faltantes if numero not in faltantes]
+            return AjusteDezenas(faltantes, maior_peso, restantes, maior_peso // 2)
 
-            return faltantes, maior_peso, restantes, maior_peso // 2
+        return ajuste_padrao
 
-    elif jogos == 3:
-
-        for i in range(0, qtde_faltantes + 1):
-            jogo.append(i)
-            peso[i] = len(dados.query(f'Jogo == 4 & Falta == {i}'))
-
-        for k, v in peso.items():
-            pesos.append(v)
-
-        n_dz = choices(jogo, weights=pesos, k=1)
-
-        for j in range(n_dz[0]):
-
-            # Sorteia um número aleatoriamente
-            numero_sorteado = choice(numeros)
-
-            # Remove da relação de sorteio o número já sorteado
-            numeros.remove(numero_sorteado)
-
-            # Atribui o número sorteado ao vetor
-            faltantes.append(numero_sorteado)
-
-        if qtde_faltantes == n_dz[0] or n_dz[0] == 0:
-            # Considera que todos os números faltantes serão sorteados no próximo sorteio
-            return num_faltantes, maior_peso
-
-        elif 1 < qtde_faltantes != n_dz[0] and n_dz[0] > 0:
-            # Demais números faltantes que não foram sorteados
-            restantes = [numero for numero in num_faltantes if numero not in faltantes]
-
-            return faltantes, maior_peso, restantes, maior_peso // 2
-
-    elif jogos == 4:
-
-        for i in range(0, qtde_faltantes + 1):
-            jogo.append(i)
-            peso[i] = len(dados.query(f'Jogo == 5 & Falta == {i}'))
-
-        for k, v in peso.items():
-            pesos.append(v)
-
-        n_dz = choices(jogo, weights=pesos, k=1)
-
-        for j in range(n_dz[0]):
-
-            # Sorteia um número aleatoriamente
-            numero_sorteado = choice(numeros)
-
-            # Remove da relação de sorteio o número já sorteado
-            numeros.remove(numero_sorteado)
-
-            # Atribui o número sorteado ao vetor
-            faltantes.append(numero_sorteado)
-
-        if qtde_faltantes == n_dz[0] or n_dz[0] == 0:
-            # Considera que todos os números faltantes serão sorteados no próximo sorteio
-            return num_faltantes, maior_peso
-
-        elif 1 < qtde_faltantes != n_dz[0] and n_dz[0] > 0:
-            # Demais números faltantes que não foram sorteados
-            restantes = [numero for numero in num_faltantes if numero not in faltantes]
-
-            return faltantes, maior_peso, restantes, maior_peso // 2
-
-    # Para jogos igual ou maior que 5, retorna a dezena que ainda não foi sorteada
-    else:
-        return num_faltantes, maior_peso
-
+    return ajuste_padrao

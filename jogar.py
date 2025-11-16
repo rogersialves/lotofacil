@@ -5,9 +5,10 @@ from calculos.pesos import calcular_numero_pesos
 from sorteios.sortear import sortear_numeros
 from modelo.modelo import criar_modelo
 from dados.dados import carregar_dados
-
+from dados.busca import buscar
+import os
+import csv
 from pandas import DataFrame
-
 
 # Carrega a base de dados
 dados = carregar_dados()
@@ -17,9 +18,25 @@ probabilidade = 0.00
 predicao_alvo = 0.00
 sorteados = list()
 procurando = 0
+jogos_alta_probabilidade = []  # Lista para armazenar jogos com alta probabilidade
 
-# probabilidade desejada
-prob_alvo = 100.0
+# probabilidade desejada e limite para salvar em CSV
+prob_alvo = 99.9
+prob_salvar = 97.0  # Probabilidade mínima para salvar em CSV
+
+# Função para salvar jogos em CSV
+def salvar_jogos_csv(jogos, caminho="./base/probabilidades.csv"):
+    """Salva os jogos de alta probabilidade em um arquivo CSV"""
+    modo = 'a' if os.path.exists(caminho) else 'w'
+    with open(caminho, modo, newline='') as arquivo:
+        escritor = csv.writer(arquivo, delimiter=';')
+        # Se for um novo arquivo, escreve o cabeçalho
+        if modo == 'w':
+            escritor.writerow(['Jogo', 'Probabilidade', 'Acurácia'])
+        # Escreve os jogos
+        for jogo in jogos:
+            escritor.writerow([jogo['sequencia'], jogo['probabilidade'], jogo['acuracia']])
+    print(f"\nJogos de alta probabilidade salvos em {caminho}")
 
 # Obtém os pesos de cada dezena e um dicionários com as dezenas e seus pesos
 peso, numero_pesos = calcular_numero_pesos(dados)
@@ -38,6 +55,10 @@ possibilidades_atualizada = remover_resultado_concursos(
                                                         possibilidades, 
                                                         resultado_concursos
                                                         )
+indice_possibilidades = len(possibilidades_atualizada) - 1
+
+if indice_possibilidades < 0:
+    raise ValueError('Nenhuma possibilidade disponível para gerar novos jogos.')
 
 # Variável de verificação se o jogo gerado é aceitável
 jogo_aceito = False
@@ -52,20 +73,23 @@ while probabilidade < prob_alvo and not jogo_aceito:
     jogo = sorted([numeros[0] for numeros in sorteados])
 
     # Cria o dataframe com os números sorteados para realizar a predição
-    y_alvo = DataFrame(sorteados)
-    y_alvo = y_alvo.iloc[:, 0].values
+    y_alvo = DataFrame(sorteados).iloc[:, 0].to_numpy(dtype='int16')
     y_alvo = y_alvo.reshape(1, 15)
 
-    # Faz a predição da Classe/Alvo
-    predicao_alvo = modelo.predict(y_alvo)
-
-    # Achando a probabilidade
-    predict_proba = modelo.predict(y_alvo)
-    probabilidade = round((predict_proba[0][0] * 100), 1)
+    # Faz a predição da Classe/Alvo e reaproveita o resultado para a probabilidade
+    previsao = modelo.predict(y_alvo)
+    predicao_alvo = float(previsao.reshape(-1)[0])
+    probabilidade = round((predicao_alvo * 100), 1)
 
     # Verifica se o jogo é possível e se ainda não foi sorteado em algum concurso
     if probabilidade >= prob_alvo:
-        jogo_aceito = [True if jogo in possibilidades_atualizada else False]
+        indice = buscar(
+                        possibilidades_atualizada,
+                        0,
+                        indice_possibilidades,
+                        jogo
+                       )
+        jogo_aceito = indice is not None
     else:
         jogo_aceito = False
 
@@ -81,16 +105,31 @@ while probabilidade < prob_alvo and not jogo_aceito:
 
     print(*sequencia, ']')
 
+    # Verificar se o jogo tem alta probabilidade para salvar
+    if probabilidade >= prob_salvar:
+        # Formatar o jogo como string para salvar
+        jogo_str = ' '.join(sequencia)
+        # Adicionar à lista de jogos de alta probabilidade
+        jogos_alta_probabilidade.append({
+            'sequencia': jogo_str,
+            'probabilidade': probabilidade,
+            'acuracia': round((pontuacao * 100), 1)
+        })
+        print(f"\033[1;32m[Jogo com {probabilidade}% de probabilidade adicionado à lista]\033[m")
+
     # Se o jogo não é aceitável, zera a probabilidade para gerar novo jogo
     if not jogo_aceito:
         probabilidade = 0.0
 
+# Após o loop, salvar os jogos de alta probabilidade (se houver)
+if jogos_alta_probabilidade:
+    salvar_jogos_csv(jogos_alta_probabilidade)
 
 # Resultados
 print(f'\nAcuracidade do Modelo: {round((pontuacao * 100), 1)}%')
 
 print('\n0 = Não tem chance de ganhar | 1 = Tem chance de ganhar')
-print(f'Resultado: (Previsão Modelo) = {predicao_alvo[0][0]}')
+print(f'Resultado: (Previsão Modelo) = {predicao_alvo}')
 
 print(f'\nProbabilidade das dezenas sairem: {probabilidade}%')
 

@@ -1,4 +1,7 @@
 requests
-Keras
+keras
+tensorflow
 pandas
-scikit_learn
+numpy
+scikit-learn
+openpyxl

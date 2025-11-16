@@ -17,7 +17,9 @@ def buscar(lista, elem_ini, elem_fin, valor_busca):
 		if valor_busca > lista[meio]:
 			return buscar(lista, meio + 1, elem_fin, valor_busca)
 		elif valor_busca < lista[meio]:
-			return buscar(lista, elem_ini, meio -1, valor_busca)
+			return buscar(lista, elem_ini, meio - 1, valor_busca)
 		else:
 			# Encontrou o elemento da busca
 			return meio
+
+	return None

@@ -1,1 +1,3 @@
-__all__ = ['analises']
+from .analises import verificar
+
+__all__ = ['verificar']
