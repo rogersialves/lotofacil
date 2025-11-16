@@ -22,7 +22,7 @@ jogos_alta_probabilidade = []  # Lista para armazenar jogos com alta probabilida
 
 # probabilidade desejada e limite para salvar em CSV
 prob_alvo = 99.9
-prob_salvar = 97.0  # Probabilidade mínima para salvar em CSV
+prob_salvar = 99.0  # Probabilidade mínima para salvar em CSV
 
 # Função para salvar jogos em CSV
 def salvar_jogos_csv(jogos, caminho="./base/probabilidades.csv"):
