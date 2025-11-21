@@ -5,3 +5,8 @@ pandas
 numpy
 scikit-learn
 openpyxl
+fastapi
+uvicorn[standard]
+joblib
+streamlit
+apscheduler

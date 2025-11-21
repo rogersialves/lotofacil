@@ -276,3 +276,55 @@ Sinta-se livre para contrituir com o projeto. Para tal, faça:
 1. O branch usado no "git checkout" tem que casar com o branch usado no "git push".
 
 1. Por fim, entre no github e abra um Pull Request (PR).
+
+## Painel Streamlit (MVP)
+
+Para utilizar uma interface web local com estatísticas, sugestões e fechamentos, consulte o guia em `docs/frontend.md` e execute:
+
+```
+streamlit run frontend/streamlit_app.py
+```
+
+> Ferramenta destinada exclusivamente a análise/entretenimento.
+
+## Principais Endpoints REST
+
+Com o backend FastAPI em execução (`uvicorn app.api.main:app --reload`), os seguintes agrupamentos estão disponíveis:
+
+- `/api/status/health` – verificação básica do serviço.
+- `/api/dados/*` – concursos, estatísticas básicas e avançadas.
+- `/api/ia/sugerir_dezenas`, `/api/ia/score_jogos`, `/api/ia/sugerir_n_dezenas` – serviços de IA/heurística.
+- `/api/fechamentos/*` – catálogo e geração dos fechamentos com scoring.
+- `/api/simulacoes/estrategia` – backtest de listas de jogos.
+- `/api/auditoria/apostas` e `/api/auditoria/resultados` – histórico de apostas e resultados registrados.
+
+## Execução com Docker/Compose
+
+Use `docker compose up --build` para levantar a API, o painel Streamlit e o scheduler. Consulte `docs/docker.md` para detalhes.
+
+## Fechamentos e Garantias
+
+Os fechamentos não escolhem dezenas – eles são matrizes matemáticas que reorganizam o “universo” sugerido pela IA. A rede neural gera o universo (15 a 21 dezenas), com acurácia mínima de 98 %, e o fechamento garante um comportamento mínimo: por exemplo, o modelo **F19-A** trabalha com 19 dezenas e 80 jogos para garantir **13 pontos** quando as 15 dezenas do sorteio estiverem dentro do universo.
+
+| Dezenas (Universo) | Garantia | Jogos mínimos (15 dezenas) | Valor aprox. (R$) |
+|--------------------|----------|----------------------------|--------------------|
+| 16 | 12 pontos | 2 | 7,00 |
+| 16 | 13 pontos | ~8 | 28,00 |
+| 16 | 14 pontos | 16 | 56,00 |
+| 17 | 12 pontos | 3 | 10,50 |
+| 17 | 13 pontos | ~12 | 42,00 |
+| 17 | 14 pontos | ~8 | 28,00 |
+| 18 | 12 pontos | 4 | 14,00 |
+| 18 | 13 pontos | ~18 | 63,00 |
+| 18 | 14 pontos | ~38 | 133,00 |
+| 19 | 12 pontos | 6 | 21,00 |
+| 19 | 13 pontos | ~34 | 119,00 |
+| 19 | 14 pontos | ~114 | 399,00 |
+| 20 | 12 pontos | 10 | 35,00 |
+| 20 | 13 pontos | ~50 | 175,00 |
+| 20 | 14 pontos | ~570 | 1.995,00 |
+| 21 | 12 pontos | 14 | 49,00 |
+| 21 | 13 pontos | ~80 | 280,00 |
+| 21 | 14 pontos | ~1.100 | 3.850,00 |
+
+Valores com “~” indicam médias encontradas em planilhas/software e podem variar conforme a otimização. A garantia de 14 pontos significa que, se as 15 dezenas sorteadas estiverem dentro do universo escolhido, pelo menos um jogo terá 14 acertos. O painel Streamlit mostra a acurácia obtida pelo modelo e salva cada teste em CSV para manter a transparência do treinamento.

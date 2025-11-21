@@ -1,48 +1,40 @@
 from pandas import read_csv
 
-
-URL = './base/resultados.csv'
+URL = "./base/resultados.csv"
 DEZENAS = [i for i in range(1, 26)]
 
 
-def criar_nao_sorteados(dz=DEZENAS,
-						base_url=URL,
-						base_lista=None,
-						atualizar_base_resultados=False):
-	"""
-	Cria uma lista com todos as dezenas não sorteadas em cada concurso.
+def criar_nao_sorteados(
+    dz=DEZENAS,
+    base_url=URL,
+    base_lista=None,
+    atualizar_base_resultados=False,
+):
+    """
+    Retorna lista com as dezenas não sorteadas em cada concurso.
+    """
 
-	:param dz: Lista com as dezenas da lotofácil (default: {DEZENAS})
-	:param base_url: CSV com todos os resultados da lotofácil (default: {URL})
-	:param base_lista: Recebe uma lista com os resultados (default: {None}) 
-	:param atualizar_resultado: True atualiza a base, do contrário, não.
-	(default: {False})
-	
-	return: Lista com as dezenas não sorteadas de cada concurso.	
-	"""
+    if base_lista is not None and isinstance(base_lista, list):
+        nao_sorteados = []
+        for resultado in base_lista:
+            resultado.sort()
+            diferenca = set(dz).difference(resultado)
+            nao_sorteados.append(list(diferenca))
+        return nao_sorteados
 
-	if not base_lista == None and type(base_lista) is list:
-		nao_sorteados = list()
+    if atualizar_base_resultados:
+        # Atualiza o CSV com todos os resultados dos sorteios já realizados
+        from dados import scrapping_resultados
 
-		for resultado in base_lista:
-			resultado.sort()
-			diferenca = set(dz).difference(resultado)
-			nao_sorteados.append(list(diferenca))
+        scrapping_resultados.atualizar_resultados()
 
-		return nao_sorteados
+    dados = read_csv(base_url, sep=";", encoding="utf-8")
+    resultados = dados.iloc[:, 2:17].values
 
-	if atualizar_base_resultados:
-		# Atualiza o CSV com todos os resultados dos sorteios já realizados
-		from dados import scrapping_resultados
+    nao_sorteados = []
+    for resultado in resultados:
+        resultado.sort()
+        diferenca = set(dz).difference(resultado)
+        nao_sorteados.append(list(diferenca))
 
-	dados = read_csv(base_url, sep=';', encoding='utf-8')
-	resultados = dados.iloc[:, 2:17].values
-
-	nao_sorteados = list()
-
-	for resultado in resultados:
-		resultado.sort()
-		diferenca = set(dz).difference(resultado)
-		nao_sorteados.append(list(diferenca))
-
-	return nao_sorteados
+    return nao_sorteados

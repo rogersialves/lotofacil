@@ -1,0 +1,14 @@
+.git
+.venv
+__pycache__
+base/
+combinacoes/
+*.pyc
+*.pyo
+*.pyd
+*.swp
+*.tmp
+node_modules
+.mypy_cache
+.pytest_cache
+*.log
